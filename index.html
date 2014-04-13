@@ -44,8 +44,10 @@
 <li><p>Use "mobile" as a namespace for controllers, views and helpers</p></li>
 <li><p>Use additional namespace in parallel to "mobile" to define templates for blackberry (as "bb") and iphone (as "iphone")  </p></li>
 <li><p>Create a module in library file (say /lib/mobile_behavior.rb) and define below methods in it to identify user agent from request and to define layout based on device:</p></li>
-</ol><pre><code>def blackberry?
-    request.user_agent =~ /BlackBerry/
+</ol>
+<pre><code>
+def blackberry?
+	request.user_agent =~ /BlackBerry/
 end
 
 def iphone?
@@ -53,37 +55,37 @@ def iphone?
 end
 
 def mobile_layout
-          if blackberry?
-                   "blackberry"
-          elsif iphone?
-                   "iphone"
-          else
-                   "mobile"
-          end
+	if blackberry?
+		"blackberry"
+	elsif iphone?
+		"iphone"
+	else
+		"mobile"
+	end
 end
 </code></pre>
-
 <ol>
 <li>Add below method definition to library file (mobile_behavior.rb) to override the default method and specify default template based on device:</li>
-</ol><pre><code>def default_template_name(action_name = self.action_name)
-    if action_name
-      action_name = action_name.to_s
-      if action_name.include?('/') &amp;&amp; template_path_includes_controller?(action_name)
-        action_name = strip_out_controller(action_name)
-      end
-    end
-    if blackberry?
-      iphone_controller_path = self.controller_path.gsub(“/mobile/", “/iphone/")
-      "#{iphone_controller_path}/#{action_name}"
-    elsif blackberry?
-       bb_controller_path = self.controller_path.gsub(“/mobile/", “/bb/")
-      "#{bb_controller_path}/#{action_name}"
-    else
-      "#{self.controller_path}/#{action_name}"
-    end
+</ol>
+<pre><code>
+def default_template_name(action_name = self.action_name)
+	if action_name
+		action_name = action_name.to_s
+		if action_name.include?('/') && template_path_includes_controller?(action_name)
+			action_name = strip_out_controller(action_name)
+		end
+	end
+	if blackberry?
+		iphone_controller_path = self.controller_path.gsub(“/mobile/", “/iphone/")
+		"#{iphone_controller_path}/#{action_name}"
+	elsif blackberry?
+		bb_controller_path = self.controller_path.gsub(“/mobile/", “/bb/")
+		"#{bb_controller_path}/#{action_name}"
+	else
+		"#{self.controller_path}/#{action_name}"
+	end
  end
 </code></pre>
-
 <ol>
 <li>Include library file module in MobileController:</li>
 </ol><p><code>include  MobileBehavior</code></p>
