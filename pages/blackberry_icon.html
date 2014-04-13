@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="../stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="../stylesheets/print.css" media="print" />
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Technical Mirage by himaenshu</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Technical Mirage</h1>
+        </header>
+
+        <!--section id="downloads" class="clearfix">
+          <a href="https://github.com/himaenshu" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section-->
+        
+        <span >
+          <a href="https://github.com/himaenshu"><img src="https://avatars1.githubusercontent.com/u/125638?s=60" width="42" height="42" style="float:left;"/></a>&nbsp;&nbsp;<a href="https://github.com/himaenshu">himaenshu</a>
+          </br>&nbsp;&nbsp;<span style="font-size:12px;">June, 2012</span>
+        </span>
+
+        <hr>
+
+        <section id="main_content">
+          <h3>
+<a name="how-to-extend-ruby-on-rails-web-application-to-mobile-browser" class="anchor" href="#how-to-extend-ruby-on-rails-web-application-to-mobile-browser"><span class="octicon octicon-link"></span></a>Creating a BlackBerry Screen Icon to launch mobile web application</h3>
+
+<p>A mobile web application generally needs an icon to launch the application on the mobile browser.  This blog is about the step wise approach to create an icon for BlackBerry (BB) device to launch a mobile web application on BB browser.</p>
+
+<p>When we say ‘BlackBerry Icon’, technically we mean a native BB application coded in java using Research In Motion (RIM) APIs.</p>
+
+<p>I was working with a web application, which team later extended to support the UI on BB browsers. I have documented the approach and steps that the team followed to create an icon for different BB devices to launch the BB supported URL of the web application on BB browsers. I have also shared the piece of required code to create the icon.</p>
+
+<p><i>The information and the code has been collected from different sources on web.</i></p>
+
+<h4>System Requirement</h4>
+<ol>
+  <li>JDK for installing JDE
+    <ol>
+      <li>For BlackBerry JDE v4.5+ you need Java SE JDK v6.0</li>
+      <li>For BlackBerry JDE v4.2.1 and v4.3.0 you need Java SE JDK v5.0 or v6.0</li>
+      <li>For BlackBerry JDE v4.1 and v4.2 you need Java SE JDK v5.0</li>
+      <li>For BlackBerry JDE v4.0 and v4.0.2 you need Java SE SDK v1.4</li>
+    </ol>
+  </li>    
+  <li>BlackBerry JDE to Develop, Build and Sign</br>
+            http://us.blackberry.com/developers/javaappdev/javadevenv.jsp</li>
+
+  <li>BlackBerry Email and MDS Service Simulator to enable system network on simulator</br>
+            http://swdownloads.blackberry.com/Downloads/contactFormPreload.do?code=00EC53C4682D36F5C4359F4AE7BD7BA1&dl=A863E2C10B7E517A09C80F83418E8B2D&check1=A</li>
+
+  <li>BlackBerry Simulator to test</br>
+            http://us.blackberry.com/developers/resources/simulators.jsp</li>
+
+  <li>Platform</br>
+        Windows® 2000 SP1 or later, or Windows® XP (for all JDE versions)</br>
+        Windows Vista® (BlackBerry JDE v4.2.1 and higher)</br>
+        Have workaround to use Windows 7 (atleast for JDE 4.2)
+  </li>
+</ol>
+
+<h4>Identify JDE Version</h4>
+
+<p>Applications built in the BlackBerry JDE are forward-compatible with newer BlackBerry Device Software versions, but they are not backward-compatible with older versions.</p>
+
+<p>Example:</br>
+An application built in BlackBerry JDE 4.1 runs on a BlackBerry smartphones running BlackBerry® Device Software 4.1 and later. It does not run on a BlackBerry smartphones running BlackBerry Device Software 4.0.</p>
+
+<p>Conclusion:</br>
+When building BlackBerry applications, you should use a BlackBerry JDE version that matches the lowest version of BlackBerry Device Software you want to support.</p>
+
+
+<h4>Install RIM Signature Keys</h4>
+
+<p>After you have installed the JDE, you will need to acquire and install RIM Signature Keys on your system. Rim Signature Keys are used to sign the compiled files, without which deliverables are restricted to execute on a device.</p>
+
+<p>How and Where to get RIM Signature Keys</br>
+Fill the small form on the page https://www.blackberry.com/SignedKeys/ and submit. You will receive three CSI files in three different emails on the email id you specify on the form.
+</p>
+
+<p>Installing Signature Keys</br>
+Double click on each file to install. The CSI files used to install your code signing keys can only be used once. They are disabled after a successful installation, which makes it important to back up your code signing keys after they have been installed.</p>
+
+<p>Backup and Restore Signature Keys</br>
+The files that need to be backed up are sigtool.csk and sigtool.db. They are created in the bin directory of JDE installation while installing the code signing keys.  To restore or enable your code signing keys in another JDE installtion, copy the sigtool.csk and sigtool.db to the bin directory of JDE installation.</p>
+
+<p>This is also the workaround to migrate the development environment with JDE 4.2 to Windows 7, as signature keys do not get installed directly on Windows 7 with JDE 4.2 but can be copied over from Windows XP (or any other supported OS) machine to get it working.</p>
+
+
+<h4>Reusable Code</h4>
+<p>Create new JDE Workspace using JDE.</p>
+<p>Create new project within the JDE Workspace.</p>
+<p>Copy below three attached java files in project directory structure.</p>
+
+<p>File#1 - ScreenIcon.java</p>
+<pre><code>
+package bb;
+import net.rim.device.api.ui.UiApplication;
+import net.rim.blackberry.api.browser.BrowserSession;
+
+public class ScreenIcon extends UiApplication {
+  public static void main(String[] args) {
+    String url = "http://www.google.com/";
+    BrowserSession site = BrowserSessionFactory.createBESBrowserSession();
+    site = (site == null ? BrowserSessionFactory.createDefaultBrowserSession() : site);
+    site.displayPage(url);
+    site.showBrowser();
+    System.exit(0);
+  }
+}
+</code></pre>
+
+<p>File#2 -  BrowserSessionFactory.java</p>
+<pre><code>
+package bb;
+import net.rim.blackberry.api.browser.Browser;
+import net.rim.blackberry.api.browser.BrowserSession;
+import net.rim.device.api.servicebook.ServiceBook;
+import net.rim.device.api.servicebook.ServiceRecord;
+class BrowserSessionFactory
+{
+  private static ServiceBook sb = ServiceBook.getSB(); 
+  private static ServiceRecord[] records = sb.findRecordsByCid("BrowserConfig");
+  public static BrowserSession createBESBrowserSession()
+  {
+   String uid = null;
+   int numRecords = records.length;
+   for (int i = 0; i < numRecords; ++i) {
+  ServiceRecord myRecord = records[i];
+     ServiceRecordHelper myRecordHelper = new ServiceRecordHelper(myRecord);
+     if( myRecord.isValid() && !myRecord.isDisabled() && myRecordHelper.getConfigType() == ServiceRecordHelper.SERVICE_RECORD_CONFIG_TYPE_BES && 
+             !myRecord.getName().equals(ServiceRecordHelper.SERVICE_RECORD_NAME_UNITE)) 
+     {
+     uid = myRecord.getUid();
+     break;
+     }
+
+     /*
+     if ((!(myRecord.isValid())) || (myRecord.isDisabled()) || (myRecordHelper.getConfigType() != 1) || (myRecord.getName().equals("Unite"))) 
+     { 
+     continue;
+      uid = myRecord.getUid();
+      break;
+     }
+   */
+   } 
+   
+   return ((uid == null) ? null : Browser.getSession(uid));
+   }
+   public static BrowserSession createDefaultBrowserSession() {
+    return Browser.getDefaultSession();
+   }
+ }
+</code></pre>
+
+<p>File#3 - ServiceRecordHelper.java</p>
+<pre><code>
+package bb;
+
+import java.io.EOFException;
+import net.rim.device.api.servicebook.ServiceRecord;
+import net.rim.device.api.synchronization.ConverterUtilities;
+import net.rim.device.api.util.DataBuffer;
+
+class ServiceRecordHelper
+{
+  private static final int SERVICE_RECORD_NAVIGATION_TYPE = 7;
+  private static final int SERVICE_RECORD_CONFIG_TYPE = 12;
+  public static final int SERVICE_RECORD_CONFIG_TYPE_WAP = 0;
+  public static final int SERVICE_RECORD_CONFIG_TYPE_BES = 1;
+  public static final int SERVICE_RECORD_CONFIG_TYPE_WIFI = 3;
+  public static final int SERVICE_RECORD_CONFIG_TYPE_BIS = 4;
+  public static final int SERVICE_RECORD_CONFIG_TYPE_WAP2 = 7;
+  public static final String SERVICE_RECORD_NAME_UNITE = "Unite";
+  private ServiceRecord record = null;
+
+  public ServiceRecordHelper(ServiceRecord record) {
+ this.record = record;
+  }
+
+  private DataBuffer getDataBuffer(int type) {
+    DataBuffer buffer = null;
+    byte[] data = this.record.getApplicationData();
+    if (data != null) {
+      buffer = new DataBuffer(data, 0, data.length, true);
+      try {
+        buffer.readByte();
+      } 
+      catch (EOFException e1) {
+        buffer = null;
+      }
+     if (!(ConverterUtilities.findType(buffer, type))) {
+        buffer = null;
+      }
+    }
+    return buffer;
+  }
+
+  public int getConfigType() {
+    return parseInt(getDataBuffer(12));
+  }
+
+  /*
+  public int getNavigationType() {
+    return parseInt(getDataBuffer(7));
+  }
+  */
+  
+  private int parseInt(DataBuffer buffer) {
+    if (buffer != null) {
+      try {
+        return ConverterUtilities.readInt(buffer);
+      } 
+      catch (EOFException e) {
+        return -1;
+      }
+    }
+    return -1;
+  }
+}
+</code></pre>
+
+<p>Add files to project using JDE.</p>
+<p>Update ScreenIcon.java for application home page URL information.</p>
+
+<div>
+<h4>Icon Image</h4>
+
+<p>BB Icon Image Size</p>
+<p>Maximum height * width (in pixels) supported by different OS Version:</p>
+< OS 4.5                            36*36
+</br>
+OS 4.5 – OS 5.0                     44*44
+</br>
+> OS 5.0                            52*52
+<p>Prefer png format of images.<p>
+</div>
+
+<p>Important</p>
+<p>We will have to create different builds of the application, using application icon image of suitable size to support different BlackBerry OS versions. Further, each of the build will have to be signed and delivered separately.</p>
+
+<h4>Steps to use an image as icon</h4>
+<ol>
+<li>Add image files, like we did for java files.</li>
+<li>Right click on the image file that you want to use as application icon for this build.</li>
+<li>Select ‘Properties’</li>
+<li>Check ‘Use as application icon’ and OK.</li>
+
+<h4>Application Configuration</h4>
+
+<p>Right click on project in left menu and select ‘Generate ALX File’.
+Verify and Update the ALX File generated in app directory for similar configuration as attached below.
+ALX File:</p>
+
+<pre><code>
+
+<loader version="1.0">
+ <application id="BBIcon">
+  <name >My App</name>
+  <description >My Mobile Web Application</description>
+  <version >1.0</version>
+  <vendor >
+   MyCompany
+  </vendor>
+  <copyright >
+   Copyright (c) 2012 MyCompany
+  </copyright>
+  <fileset Java="1.25">
+   <directory _appsVersion="[4.2.0,4.5.0)">4.2</directory>
+   <directory _appsVersion="[4.5.0,4.7.2)">4.5</directory>
+   <directory _appsVersion="[5.0.0,)">5.0</directory>
+   <files>BBIcon.cod</files>
+  </fileset>
+
+  </application>
+</loader>
+
+</code></pre>
+
+<pre><code>
+<directory _appsVersion="[4.2.0,4.5.0)">4.2</directory> 
+</code></pre>
+<p>implies BB OS version from 4.2 to 4.5 will look into the directory ‘4.2’ to install the icon (BBIcon.cod file).</p>
+
+<pre><code>
+<directory _appsVersion="[5.0.0,)">5.0</directory>
+</code></pre>
+<p>implies BB OS version from 5.0 and above will look into the directory ‘5.0’ to install the icon (BBIcon.cod file).</p>
+
+<ol>
+<li>Right click on project in left menu.</li>
+<li>Select ‘Properties’.</li>
+<li>Update the Configuration of the project.</li>
+<li>Add the configured ALX file under ‘Build’ configuration as ‘Imported alx files’.</li>
+</ol>
+
+
+<h4>Building the Application</h4>
+
+<p>Time to build the application.</p>
+
+<p>Below are the set of files in the directory after building the project:</p>
+
+<ol>
+<li>BBIcon.jdp - JDE project file</li>
+<li>BBIcon.alx – Build and Deploy configuration file, and it will be required for an automated icon push to an actual device.</li>
+<li>BBIcon.cod is the actual executable file to install icon on the device.</li>
+</ol>
+
+<h4>Signing the Deliverable</h4>
+
+<p>The build project is executable on simulator using the COD file. Load COD file on simulator to test.</p>
+
+<p>But to get it working on an actual device as well, the COD file has to signed using three RIM Signature Keys. Request Signatures option on JDE will guide thru to get the deliverable files signed, if the Signature Keys are already installed.</p>
+
+<p>Password specified while acquiring the RIM Keys is required to signed the COD files.</p>
+
+<p>Finally, collect the output files (after signing the cod files) in the directory as configured in ALX file and should be delivered along with ALX file for deployment to device. </p>
+
+<p>We are done.  </p>
+
+        </section>
+
+        <footer>
+          <span>This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
